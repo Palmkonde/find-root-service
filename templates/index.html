@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Root Finder</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        form { max-width: 400px; }
+        label { display: block; margin-top: 10px; }
+        input, select, button { width: 100%; padding: 8px; margin-top: 5px; }
+        .guide { margin-top: 20px; padding: 10px; background: #f9f9f9; border-left: 4px solid #007BFF; }
+    </style>
+</head>
+<body>
+    <h2>Find a Root of f(x)</h2>
+    <form action="/find_root" method="post">
+        <label for="function">Enter f(x):</label>
+        <input type="text" id="function" name="function" placeholder="x**2 - 16" required>
+        
+        <h2>Enter Range and Maximum Error</h2>
+        <label for="from-x">Enter start x:</label>
+        <input type="number" id="from-x" name="from-x" placeholder="-5" required>
+        
+        <label for="to-x">Enter end x:</label>
+        <input type="number" id="to-x" name="to-x" placeholder="5" required>
+        
+        <label for="error">Select maximum error:</label>
+        <select id="error" name="error" required>
+            <option value="1e-5">1e-5</option>
+            <option value="1e-10">1e-10</option>
+            <option value="1e-15">1e-15</option>
+            <option value="1e-20">1e-20</option>
+        </select>
+        
+        <button type="submit">Find Root</button>
+    </form>
+    
+    <div class="guide">
+        <h3>How to Enter f(x)</h3>
+        <p>Use Python-like syntax for mathematical expressions:</p>
+        <ul>
+            <li><strong>Exponentiation:</strong> Use <code>**</code> instead of <code>^</code> (e.g., <code>x**2 + 4</code>)</li>
+            <li><strong>Trigonometric functions:</strong> <code>sin(x)</code>, <code>cos(x)</code>, <code>tan(x)</code></li>
+            <li><strong>Logarithms:</strong> <code>log(x)</code> for natural log</li>
+            <li><strong>Square root:</strong> Use <code>sqrt(x)</code></li>
+        </ul>
+        <p>Example Inputs:</p>
+        <ul>
+            <li><code>x**2 - 5*sin(x) + x - 1</code></li>
+            <li><code>exp(x) - 2</code></li>
+            <li><code>log(x) - 3</code></li>
+        </ul>
+    </div>
+    
+    <div class="output">
+        <h3>Results</h3>
+        {% if bisection_image and newton_image %}
+            <h4>Bisection and Newton</h4>
+            <img src="{{ bisection_image }}" />
+            <img src="{{ newton_image }}" />
+        {% endif %}
+
+        {% if error_image %}
+            <h4>Error vs Iteration result: </h4>
+            <img src="{{ error_image }}" />
+        {% endif %}
+            
+        {% if noSol %}
+            <h4>No solution in real number please try again</h4>
+        {% endif %}
+    </div>
+</body>
+</html>
