@@ -27,14 +27,23 @@ class FindRoot:
         x_vals = []
         a = self.start
         b = self.end
-        mid_point = None
+        mid_point = a
         it = 0
+
+        while True:
+            f_a = self.function.subs(self.x, a)
+            f_b = self.function.subs(self.x, b)
+            
+            if f_a * f_b > 0:
+                print("Choosing new random points a and b because f(a) * f(b) > 0.")
+                a = np.random.uniform(self.start, self.end)
+                b = np.random.uniform(self.start, self.end)
+            else:
+                break          
 
         while abs(b - a) > self.epsilon:
             mid_point = a + (b - a) / 2
             f_m = self.function.subs(self.x, mid_point)
-            f_a = self.function.subs(self.x, a)
-            f_b = self.function.subs(self.x, b)
 
             print(mid_point)
 
@@ -44,8 +53,10 @@ class FindRoot:
                 break
             elif f_a * f_m < 0:
                 b = mid_point
+                f_b = f_m
             else:
                 a = mid_point
+                f_a = f_m
 
         print("End bisection")
         return mid_point, it, x_vals
@@ -137,7 +148,7 @@ def plot_animation(ax, iter_num, x_val, f_x, name):
         frames.append(img)
 
     frames[0].save(f"{image_path}/{name}.gif", save_all=True,
-                   append_images=frames[1:], loop=1, duration=1000)
+                   append_images=frames[1:], loop=0, duration=1000)
 
 
 @app.route('/')
@@ -211,10 +222,12 @@ def find_root() -> None:
         ax.plot(x_tmp, y_tmp)
         plot_animation(ax, it2, x_val2, f_x, "Newton")
 
-    return render_template("index.html", 
-                           error_image=image_path,
-                           bisection_image=bi_image,
-                           newton_image=newton_image)
+        return render_template("index.html", 
+                            error_image=image_path,
+                            bisection_image=bi_image,
+                            newton_image=newton_image)
+    if request.method == "GET":
+        return render_template("index.html")
 
 
 if __name__ == "__main__":
