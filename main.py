@@ -30,16 +30,24 @@ class FindRoot:
         mid_point = a
         it = 0
 
-        while True:
+        random_count = 0
+        maximum_random_count = 100
+
+        while random_count < maximum_random_count:
             f_a = self.function.subs(self.x, a)
             f_b = self.function.subs(self.x, b)
-            
+
             if f_a * f_b > 0:
                 print("Choosing new random points a and b because f(a) * f(b) > 0.")
                 a = np.random.uniform(self.start, self.end)
                 b = np.random.uniform(self.start, self.end)
             else:
-                break          
+                break
+
+            random_count += 1
+
+        if random_count == maximum_random_count:
+            return [0.0, 0, []]
 
         while abs(b - a) > self.epsilon:
             mid_point = a + (b - a) / 2
@@ -151,6 +159,46 @@ def plot_animation(ax, iter_num, x_val, f_x, name):
                    append_images=frames[1:], loop=0, duration=1000)
 
 
+def process_bisection(fr, real_solution):
+    bisection_answer, it1, x_val1 = fr.bisection()
+    bisection_approch = find_nearest_from_list(bisection_answer, real_solution)
+    error_value1 = [abs(x - bisection_approch) for x in x_val1]
+    return it1, x_val1, error_value1
+
+
+def process_newton(fr, real_solution):
+    newton_answer, it2, x_val2 = fr.newton_method()
+    newton_approch = find_nearest_from_list(newton_answer, real_solution)
+    error_value2 = [abs(x - newton_approch) for x in x_val2]
+    return it2, x_val2, error_value2
+
+
+def plot_error(iter_nums, error_value1, error_value2):
+    image_path = r"./static/image/Error.png"
+    fig, ax = plt.subplots()
+    ax.set_title("Iteration vs Error")
+    ax.plot(iter_nums, error_value1, label="Bisection")
+    ax.plot(iter_nums, error_value2, label="Newton's method")
+    ax.set_yscale('log')
+    ax.set_xlabel("Iteration")
+    ax.set_ylabel("Error")
+    ax.set_xlim(0, max(iter_nums))
+    ax.legend()
+    plt.savefig(image_path)
+    plt.close()
+
+    return image_path
+
+
+def plot_method(it, x_val, f_x, range_input, method_name, image_path):
+    fig, ax = plt.subplots()
+    x_tmp, y_tmp = plot_base_graph(f_x, range_input)
+    ax.plot(x_tmp, y_tmp)
+    plot_animation(ax, it, x_val, f_x, method_name)
+    plt.close()
+    return image_path
+
+
 @app.route('/')
 def home_page() -> None:
     return render_template("index.html")
@@ -170,62 +218,36 @@ def find_root() -> None:
             epsilon=float(epsilon)
         )
 
-        # data
-        bisection_answer, it1, x_val1 = fr.bisection()
-        newton_answer, it2, x_val2 = fr.newton_method()
         real_solution = fr.find_roots_in_range()
-        
+
         if not real_solution:
             return render_template("index.html", noSol=True)
 
-        bisection_approch = find_nearest_from_list(
-            bisection_answer, real_solution)
-        newton_approch = find_nearest_from_list(newton_answer, real_solution)
+        it1, x_val1, error_value1 = process_bisection(fr, real_solution)
+        it2, x_val2, error_value2 = process_newton(fr, real_solution)
+
+        if it1 == 0 and not x_val1:
+            return render_template("index.html",
+                                   bisectionFailed=True,
+                                   errorMessage="Bisection Failed Try again with new range")
 
         iter_nums = [i for i in range(max(it1, it2))]
-        error_value1 = [abs(x - bisection_approch) for x in x_val1]
-        error_value2 = [abs(x - newton_approch) for x in x_val2]
-
         while len(error_value1) < len(iter_nums):
             error_value1.append(error_value1[-1])
-
         while len(error_value2) < len(iter_nums):
             error_value2.append(error_value2[-1])
 
-        print("ploting...")
+        print("plotting...")
+        image_path = plot_error(iter_nums, error_value1, error_value2)
+        bi_image = plot_method(it1, x_val1, f_x, (int(from_x), int(
+            to_x)), "Bisection", "./static/image/Bisection.gif")
+        newton_image = plot_method(it2, x_val2, f_x, (int(
+            from_x), int(to_x)), "Newton", "./static/image/Newton.gif")
 
-        # plotting Error
-        image_path = r"./static/image/Error.png"
-        fig, ax = plt.subplots()
-        ax.set_title("Iteration vs Error")
-        ax.plot(iter_nums, error_value1, label="Bisection")
-        ax.plot(iter_nums, error_value2, label="Newton's method")
-        ax.set_yscale('log')
-        ax.set_xlabel("Iteration")
-        ax.set_ylabel("Error")
-        ax.set_xlim(0, max(iter_nums))
-        ax.legend()
-        plt.savefig(image_path)
-        plt.close()
-
-        # plotting bisection
-        bi_image = "./static/image/Bisection.gif"
-        fig, ax = plt.subplots()
-        x_tmp, y_tmp = plot_base_graph(f_x, (int(from_x), int(to_x)))
-        ax.plot(x_tmp, y_tmp)
-        plot_animation(ax, it1, x_val1, f_x, "Bisection")
-        plt.close()
-        
-        newton_image = "./static/image/Newton.gif"
-        fig, ax = plt.subplots()
-        x_tmp, y_tmp = plot_base_graph(f_x, (int(from_x), int(to_x)))
-        ax.plot(x_tmp, y_tmp)
-        plot_animation(ax, it2, x_val2, f_x, "Newton")
-
-        return render_template("index.html", 
-                            error_image=image_path,
-                            bisection_image=bi_image,
-                            newton_image=newton_image)
+        return render_template("index.html",
+                               error_image=image_path,
+                               bisection_image=bi_image,
+                               newton_image=newton_image)
     if request.method == "GET":
         return render_template("index.html")
 

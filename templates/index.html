@@ -55,6 +55,9 @@
     
     <div class="output">
         <h3>Results</h3>
+        {% if bisectionFailed %}
+            <p>{{ errorMessage }}</p>
+        {% endif %}        
         {% if bisection_image and newton_image %}
             <h4>Bisection and Newton</h4>
             <img src="{{ bisection_image }}" />
